@@ -1,0 +1,59 @@
+node {
+
+	    def mavenHome
+	    def mavenCMD
+
+	    
+	    stage('Environment Declaration')
+	    {
+	        echo 'initialize the variables'
+	        mavenHome = tool name: 'myMaven' , type: 'maven'
+	        mavenCMD = "${mavenHome}/bin/mvn"
+	        
+	    }
+	    
+	    
+	   
+	  
+	        stage('code checkout')
+	   {
+                        
+               echo 'code checkout'
+               git 'https://github.com/swapnilsjadhav9519/project2.git'
+        }
+        
+            stage('maven build'){
+              echo ' clean and compile and test package'
+                bat "${mavenCMD} clean package"
+        } 
+
+
+            stage ('build docker image')
+            {
+               echo 'build the docker image'
+               bat  "docker build -t swapnil9519/project2:1.0 ."
+            }
+
+            stage ('push to dockerhub')
+            {
+               echo 'push image to docker hub'
+              
+              withCredentials([string(credentialsId: 'dhpid', variable: 'dhpwd')]) 
+              {
+    
+             bat "docker login -u swapnil9519 -p ${dhpwd}"
+             bat "docker push swapnil9519/project2:1.0 "
+    
+              }
+            }
+            
+            
+                stage ('run the container')
+            {
+               echo 'Lets run the container'
+               bat  "docker rm medicure"
+               bat  "docker run -itd --name=medicure -p 8085:8081 -t swapnil9519/project2:1.0"
+            }
+	    
+	    
+}
